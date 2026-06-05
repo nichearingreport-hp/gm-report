@@ -2407,7 +2407,7 @@
   // ==========================================================
   //  アプリ バージョン（更新時はここの数字だけ変える）
   // ==========================================================
-  const APP_VERSION = "GMSDR_gm7.5.0";
+  const APP_VERSION = "GMSDR_gm7.5.2";
 
   // ==========================================================
   //  ログインパスワード（1日1回・同日2回目以降は自動通過）
@@ -4059,8 +4059,11 @@
     const salesJA = parseInt(document.getElementById("sales-this-ja").value) || 0;
     const salesSeikyo = parseInt(document.getElementById("sales-this-seikyo").value) || 0;
     const salesNext = parseInt(document.getElementById("sales-next-month").value) || 0;
-    report += `【現在の売上】 前月繰越 ${formatNumDisplay(salesPrevCarry)}台 / 今月JA ${formatNumDisplay(salesJA)}台、生協 ${formatNumDisplay(salesSeikyo)}台 / 来月繰越 ${formatNumDisplay(salesNext)}台\n`;
-    report += "───────\n\n";
+    // v7.5.2: 全0の場合は項目ごと非表示
+    if (salesPrevCarry > 0 || salesJA > 0 || salesSeikyo > 0 || salesNext > 0) {
+      report += `【現在の売上】 前月繰越 ${formatNumDisplay(salesPrevCarry)}台 / 今月JA ${formatNumDisplay(salesJA)}台、生協 ${formatNumDisplay(salesSeikyo)}台 / 来月繰越 ${formatNumDisplay(salesNext)}台\n`;
+      report += "───────\n\n";
+    }
 
     const aichiPref = document.getElementById("aichi-pref-select").value;
     // 内訳計算（プレビュー用）
@@ -4077,16 +4080,17 @@
 
     // 月間累計用の数値表示ヘルパー
     const vd = (key) => formatNumDisplay(v(key));
-    report += `【商談件数 月間累計】 ${formatNumDisplay(grandTotal)}件\n`;
-    report += "───────\n";
-    report += `《${aichiPref}》　合計商談 ${formatNumDisplay(aichiSum)}件 (新規${formatNumDisplay(aichiShinki)}件、リピート${formatNumDisplay(aichiRepeat)}件、その他${formatNumDisplay(aichiOther)}件)\n`;
-    report += `  相談会 ${vd("aichi-soudan")}　返信 ${vd("aichi-henshin")}　問合 ${vd("aichi-toiawase")}　J紹 ${vd("aichi-jsho")}　客紹 ${vd("aichi-kakusho")}　追買 ${vd("aichi-tsuikai")}　SO ${vd("aichi-so")}　その他 ${vd("aichi-other")}件\n`;
-    report += `《生協》　合計商談 ${formatNumDisplay(seikyoSum)}件 (新規${formatNumDisplay(seikyoShinki)}件、リピート${formatNumDisplay(seikyoRepeat)}件、その他${formatNumDisplay(seikyoOther)}件)\n`;
-    report += `  相談会 ${vd("seikyo-soudan")}　返信 ${vd("seikyo-henshin")}　問合 ${vd("seikyo-toiawase")}　${seikyoJshoLabel} ${vd("seikyo-jsho")}　客紹 ${vd("seikyo-kakusho")}　追買 ${vd("seikyo-tsuikai")}　SO ${vd("seikyo-so")}　その他 ${vd("seikyo-other")}件\n\n`;
+    // v7.5.2: 県・生協ともに0件の場合は項目ごと非表示
+    if (aichiSum > 0 || seikyoSum > 0) {
+      report += `【商談件数 月間累計】 ${formatNumDisplay(grandTotal)}件\n`;
+      report += "───────\n";
+      report += `《${aichiPref}》　合計商談 ${formatNumDisplay(aichiSum)}件 (新規${formatNumDisplay(aichiShinki)}件、リピート${formatNumDisplay(aichiRepeat)}件、その他${formatNumDisplay(aichiOther)}件)\n`;
+      report += `  相談会 ${vd("aichi-soudan")}　返信 ${vd("aichi-henshin")}　問合 ${vd("aichi-toiawase")}　J紹 ${vd("aichi-jsho")}　客紹 ${vd("aichi-kakusho")}　追買 ${vd("aichi-tsuikai")}　SO ${vd("aichi-so")}　その他 ${vd("aichi-other")}件\n`;
+      report += `《生協》　合計商談 ${formatNumDisplay(seikyoSum)}件 (新規${formatNumDisplay(seikyoShinki)}件、リピート${formatNumDisplay(seikyoRepeat)}件、その他${formatNumDisplay(seikyoOther)}件)\n`;
+      report += `  相談会 ${vd("seikyo-soudan")}　返信 ${vd("seikyo-henshin")}　問合 ${vd("seikyo-toiawase")}　${seikyoJshoLabel} ${vd("seikyo-jsho")}　客紹 ${vd("seikyo-kakusho")}　追買 ${vd("seikyo-tsuikai")}　SO ${vd("seikyo-so")}　その他 ${vd("seikyo-other")}件\n\n`;
+    }
 
-    report += "【本日の商談・結果】\n";
-    report += "───────\n";
-    // 全カテゴリのアイテム集計
+    // v7.5.2: 全カテゴリで入力ない場合は項目ごと非表示
     const todayItemsByCategory = TODAY_CATS.map(cat => ({
       label: cat.label,
       items: Array.from(document.querySelectorAll(`#today-${cat.key}-list textarea`))
@@ -4094,6 +4098,8 @@
     }));
     const todayHasAny = todayItemsByCategory.some(c => c.items.length > 0);
     if (todayHasAny) {
+      report += "【本日の商談・結果】\n";
+      report += "───────\n";
       todayItemsByCategory.forEach(c => {
         // 入力があったカテゴリのみ表示
         if (c.items.length > 0) {
@@ -4101,19 +4107,27 @@
           c.items.forEach(t => report += `  ・${t}\n`);
         }
       });
+      report += "\n";
     }
-    report += "\n";
 
     // メモ
     const memoText = (document.getElementById("memo-text") || {}).value || "";
-    report += "【メモ】\n";
-    report += "───────\n";
-    report += memoText.trim() ? memoText.trim() + "\n\n" : "\n";
+    // v7.5.2: 空の場合は項目ごと非表示
+    if (memoText.trim()) {
+      report += "【メモ】\n";
+      report += "───────\n";
+      report += memoText.trim() + "\n\n";
+    }
 
-    report += `【翌営業日の予定】${nextDateStr}\n`;
-    report += "───────\n";
+    // 翌営業日の予定
     const nextFree = v("next-free").trim();
-    report += nextFree ? nextFree + "\n\n" : "\n";
+    // v7.5.2: 自由記述が空の場合は項目ごと非表示
+    //        （日付は自動表示なので判定対象外）
+    if (nextFree) {
+      report += `【翌営業日の予定】${nextDateStr}\n`;
+      report += "───────\n";
+      report += nextFree + "\n\n";
+    }
 
     // プルダウン値を本文に組み込むヘルパー
     const formatItemText = (item, txt) => {
@@ -4265,13 +4279,7 @@
     const meetShinki = parseInt(document.getElementById("badge-meet-shinki").textContent) || 0;
     const meetKou = parseInt(document.getElementById("badge-meet-koukyaku").textContent) || 0;
     const meetSupport = parseInt((document.getElementById("badge-meet-support") || {}).textContent || "0") || 0;
-    report += `【今月の相談会】 JA${meetTotal}会場（内サポ会場 ${meetSupport}）、JA新規${meetShinki}名、JA顧客${meetKou}名\n`;
-    report += "───────\n";
     const meetData = collectMeetBlocks("meet");
-    meetData.forEach(({pref, items, totalShinki, totalKou}) => {
-      report += `《${pref}》　${items.length}会場 新規${totalShinki}名・顧客${totalKou}名\n`;
-      items.forEach(t => report += `${t}\n`);
-    });
     // 生協会場：メールで生協個別の集計を表示
     const meetSeikyoListEl = document.getElementById("meet-seikyo-list");
     let seikyoSupportCount = 0;
@@ -4284,11 +4292,21 @@
       });
     }
     const meetSeikyo = collectMeetSeikyo("meet-seikyo-list");
-    if (meetSeikyo) {
-      report += `《生協》会場　生協${meetSeikyo.items.length}会場（内サポ会場 ${seikyoSupportCount}）、新規${meetSeikyo.totalShinki}名、顧客${meetSeikyo.totalKou}名\n`;
-      meetSeikyo.items.forEach(t => report += `${t}\n`);
+    // v7.5.2: JA・生協ともに会場0の場合は項目ごと非表示
+    const hasMeet = meetData.length > 0 || (meetSeikyo && meetSeikyo.items.length > 0);
+    if (hasMeet) {
+      report += `【今月の相談会】 JA${meetTotal}会場（内サポ会場 ${meetSupport}）、JA新規${meetShinki}名、JA顧客${meetKou}名\n`;
+      report += "───────\n";
+      meetData.forEach(({pref, items, totalShinki, totalKou}) => {
+        report += `《${pref}》　${items.length}会場 新規${totalShinki}名・顧客${totalKou}名\n`;
+        items.forEach(t => report += `${t}\n`);
+      });
+      if (meetSeikyo) {
+        report += `《生協》会場　生協${meetSeikyo.items.length}会場（内サポ会場 ${seikyoSupportCount}）、新規${meetSeikyo.totalShinki}名、顧客${meetSeikyo.totalKou}名\n`;
+        meetSeikyo.items.forEach(t => report += `${t}\n`);
+      }
+      report += "\n";
     }
-    report += "\n";
 
     // 新規来場：JA（県）と生協で個別集計、※と今月の分離も実施
     const raijoStats = (() => {
@@ -4314,69 +4332,91 @@
       const seikyo = seikyoList ? collectStats(seikyoList, true) : { astTotal: 0, numTotal: 0, supportApo: 0 };
       return { ja, seikyo };
     })();
-    report += `【新規---来場】 JA※${raijoStats.ja.astTotal}件・JA今月${raijoStats.ja.numTotal}件（内サポAPO ${raijoStats.ja.supportApo}件）\n`;
-    report += "───────\n";
     const raijoData = collectPrefBlocks("raijo");
-    raijoData.forEach(({pref, items}) => {
-      report += `《${pref}》\n`;
-      items.forEach(t => report += `${t}\n`);
-    });
     const raijoSeikyo = collectList("raijo-seikyo-list");
-    if (raijoSeikyo.length) {
-      report += `《生協》来場　※${raijoStats.seikyo.astTotal}件・今月${raijoStats.seikyo.numTotal}件（内サポAPO ${raijoStats.seikyo.supportApo}件）\n`;
-      raijoSeikyo.forEach(t => report += `${t}\n`);
+    // v7.5.2: JA・生協ともに来場0件の場合は項目ごと非表示
+    const hasRaijo = raijoData.length > 0 || raijoSeikyo.length > 0;
+    if (hasRaijo) {
+      report += `【新規---来場】 JA※${raijoStats.ja.astTotal}件・JA今月${raijoStats.ja.numTotal}件（内サポAPO ${raijoStats.ja.supportApo}件）\n`;
+      report += "───────\n";
+      raijoData.forEach(({pref, items}) => {
+        report += `《${pref}》\n`;
+        items.forEach(t => report += `${t}\n`);
+      });
+      if (raijoSeikyo.length) {
+        report += `《生協》来場　※${raijoStats.seikyo.astTotal}件・今月${raijoStats.seikyo.numTotal}件（内サポAPO ${raijoStats.seikyo.supportApo}件）\n`;
+        raijoSeikyo.forEach(t => report += `${t}\n`);
+      }
+      report += "\n";
     }
-    report += "\n";
 
     // JA《新規》
-    report += "【JA《新規》---返信・問合・紹介・他】 " + (() => {
+    const respJaCount = (() => {
       const r1 = countTypes("respH");
       const r2 = countTypes("respT");
       const r3 = countTypes("respJ");
       const r4 = countTypes("respS");
-      const ast = r1.asterisk + r2.asterisk + r3.asterisk + r4.asterisk;
-      const num = r1.numbered + r2.numbered + r3.numbered + r4.numbered;
-      return `※${ast}件・今月${num}件`;
-    })() + "\n";
-    report += "───────\n";
-    const respSubs = [
-      { type: "respH", title: "■ JA新規---返信", breakdownId: null },
-      { type: "respT", title: "■ JA新規---問合", breakdownId: null },
-      { type: "respJ", title: "■ JA新規---JA紹介・客紹介", breakdownId: "breakdown-respJ" },
-      { type: "respS", title: "■ JA新規---SP紹介・担当者紹介・他", breakdownId: "breakdown-respS" }
-    ];
-    respSubs.forEach(sub => {
-      const data = collectPrefBlocks(sub.type);
-      if (data.length === 0) return;
-      const breakdown = sub.breakdownId ? ((document.getElementById(sub.breakdownId) || {}).textContent || "") : "";
-      report += `${sub.title}${breakdown}\n`;
-      data.forEach(({pref, items}) => {
-        report += `《${pref}》\n`;
-        items.forEach(t => report += `${t}\n`);
+      return r1.asterisk + r2.asterisk + r3.asterisk + r4.asterisk
+           + r1.numbered + r2.numbered + r3.numbered + r4.numbered;
+    })();
+    // v7.5.2: 0件の場合は項目ごと非表示
+    if (respJaCount > 0) {
+      report += "【JA《新規》---返信・問合・紹介・他】 " + (() => {
+        const r1 = countTypes("respH");
+        const r2 = countTypes("respT");
+        const r3 = countTypes("respJ");
+        const r4 = countTypes("respS");
+        const ast = r1.asterisk + r2.asterisk + r3.asterisk + r4.asterisk;
+        const num = r1.numbered + r2.numbered + r3.numbered + r4.numbered;
+        return `※${ast}件・今月${num}件`;
+      })() + "\n";
+      report += "───────\n";
+      const respSubs = [
+        { type: "respH", title: "■ JA新規---返信", breakdownId: null },
+        { type: "respT", title: "■ JA新規---問合", breakdownId: null },
+        { type: "respJ", title: "■ JA新規---JA紹介・客紹介", breakdownId: "breakdown-respJ" },
+        { type: "respS", title: "■ JA新規---SP紹介・担当者紹介・他", breakdownId: "breakdown-respS" }
+      ];
+      respSubs.forEach(sub => {
+        const data = collectPrefBlocks(sub.type);
+        if (data.length === 0) return;
+        const breakdown = sub.breakdownId ? ((document.getElementById(sub.breakdownId) || {}).textContent || "") : "";
+        report += `${sub.title}${breakdown}\n`;
+        data.forEach(({pref, items}) => {
+          report += `《${pref}》\n`;
+          items.forEach(t => report += `${t}\n`);
+        });
+        report += "\n";
       });
-      report += "\n";
-    });
+    }
 
     // 生協《新規》
-    report += "【生協《新規》---返信・問合・紹介・他】 " + (() => {
+    const respSeikyoCount = (() => {
       const r = countTypesList(["srespH-list", "srespT-list", "srespJ-list", "srespS-list"]);
-      return `※${r.asterisk}件・今月${r.numbered}件`;
-    })() + "\n";
-    report += "───────\n";
-    const srespSubs2 = [
-      { id: "srespH-list", title: "■ 生協新規---返信", breakdownId: null },
-      { id: "srespT-list", title: "■ 生協新規---問合", breakdownId: null },
-      { id: "srespJ-list", title: "■ 生協新規---生協紹介・客紹介", breakdownId: "breakdown-srespJ" },
-      { id: "srespS-list", title: "■ 生協新規---SP紹介・担当者紹介・他", breakdownId: "breakdown-srespS" }
-    ];
-    srespSubs2.forEach(sub => {
-      const items = collectList(sub.id);
-      if (items.length === 0) return;
-      const breakdown = sub.breakdownId ? ((document.getElementById(sub.breakdownId) || {}).textContent || "") : "";
-      report += `${sub.title}${breakdown}\n`;
-      items.forEach(t => report += `${t}\n`);
-      report += "\n";
-    });
+      return r.asterisk + r.numbered;
+    })();
+    // v7.5.2: 0件の場合は項目ごと非表示
+    if (respSeikyoCount > 0) {
+      report += "【生協《新規》---返信・問合・紹介・他】 " + (() => {
+        const r = countTypesList(["srespH-list", "srespT-list", "srespJ-list", "srespS-list"]);
+        return `※${r.asterisk}件・今月${r.numbered}件`;
+      })() + "\n";
+      report += "───────\n";
+      const srespSubs2 = [
+        { id: "srespH-list", title: "■ 生協新規---返信", breakdownId: null },
+        { id: "srespT-list", title: "■ 生協新規---問合", breakdownId: null },
+        { id: "srespJ-list", title: "■ 生協新規---生協紹介・客紹介", breakdownId: "breakdown-srespJ" },
+        { id: "srespS-list", title: "■ 生協新規---SP紹介・担当者紹介・他", breakdownId: "breakdown-srespS" }
+      ];
+      srespSubs2.forEach(sub => {
+        const items = collectList(sub.id);
+        if (items.length === 0) return;
+        const breakdown = sub.breakdownId ? ((document.getElementById(sub.breakdownId) || {}).textContent || "") : "";
+        report += `${sub.title}${breakdown}\n`;
+        items.forEach(t => report += `${t}\n`);
+        report += "\n";
+      });
+    }
 
     // 在庫：自分の在庫
     const selfUserName = document.getElementById("userSelect").value;
@@ -4384,40 +4424,38 @@
       .map(i => i.value.trim())
       .filter(t => t.length > 0);
 
-    report += "【報告者の在庫】\n";
-    report += "───────\n";
-    if (selfStock.length === 0) {
-      report += "（在庫なし）\n";
-    } else {
+    // v7.5.2: 在庫リストが空の場合は項目ごと非表示
+    if (selfStock.length > 0) {
+      report += "【報告者の在庫】\n";
+      report += "───────\n";
       selfStock.forEach(t => report += `${t}\n`);
+      report += "\n";
     }
-    report += "\n";
 
     // 在庫：エリア内他社員
-    report += "【エリア内の在庫】\n";
-    report += "───────\n";
-    if (!Array.isArray(areaStocksData) || areaStocksData.length === 0) {
-      report += "（データなし）\n";
-    } else {
-      // 自分以外を抽出
+    // v7.5.2: 他社員全員が在庫無しの場合は項目ごと非表示（タイトル・区切り線も含む）
+    if (Array.isArray(areaStocksData) && areaStocksData.length > 0) {
       const others = areaStocksData.filter(s => s && s.name && s.name !== selfUserName);
-      if (others.length === 0) {
-        report += "（同エリアの他社員データなし）\n";
-      } else {
-        others.forEach(s => {
-          // 名前行：報告ありは「（最終M/D）」、未報告はカッコなし
-          let nameLine = `■${s.name}`;
-          if (s.hasRecord) {
-            nameLine += `（最終${s.lastReportDate || "-"}）`;
-          }
-          report += `${nameLine}\n`;
-          if (s.stock && s.stock.length > 0) {
-            s.stock.forEach(t => report += `${t}\n`);
-          } else {
-            report += "（在庫なし）\n";
-          }
-          report += "\n";
-        });
+      if (others.length > 0) {
+        const anyHasStock = others.some(s => s && s.stock && s.stock.length > 0);
+        if (anyHasStock) {
+          report += "【エリア内の在庫】\n";
+          report += "───────\n";
+          others.forEach(s => {
+            // 名前行：報告ありは「（最終M/D）」、未報告はカッコなし
+            let nameLine = `■${s.name}`;
+            if (s.hasRecord) {
+              nameLine += `（最終${s.lastReportDate || "-"}）`;
+            }
+            report += `${nameLine}\n`;
+            if (s.stock && s.stock.length > 0) {
+              s.stock.forEach(t => report += `${t}\n`);
+            } else {
+              report += "（在庫なし）\n";
+            }
+            report += "\n";
+          });
+        }
       }
     }
     report += "\n━━━━━━━━━━━━━━━━━━━━━\n";
