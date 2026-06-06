@@ -6,8 +6,10 @@
 <title>最終報告 | NICヒアリング</title>
 <style>
   :root {
-    --navy: #36A7A4;       /* v7.5.4: GM事業部用ターコイズ（旧: #36A7A4 ネイビー） */
-    --navy-light: #4DB8B5; /* v7.5.4: 派生色も対応 */
+    --navy: #00857A;       /* v7.5.6: 本翡翠（深いターコイズ） */
+    --navy-light: #00A89C; /* v7.5.6: 派生色（明るめ本翡翠） */
+    --pink: #E11A54;
+    --pink-light: #FFE4EB;
     --turquoise: #00B0DD;
     --turquoise-light: #E8F4F8;
     --fuchsia: #C71585;
@@ -19,6 +21,20 @@
     --light-gray: #F0F0F0;
     --text: #2A2A2A;
     --white: #FFFFFF;
+    --border: #E0E0E0;
+  }
+
+  /* v7.6.0: 完全非表示用クラス（コードは残置、CSSのみで隠す） */
+  .gm-hidden { display: none !important; }
+  /* v7.6.0: 月間累計の生協側「使用なし」メッセージ */
+  .seikyo-disabled-msg {
+    padding: 8px 12px;
+    color: #888;
+    font-size: 13px;
+    text-align: center;
+    background: #f8f8f8;
+    border-radius: 4px;
+    margin: 4px 0;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -173,13 +189,13 @@
     font-weight: 600 !important;
   }
   /* 固定表示（事業部・エリア） */
-  /* v7.5.5: ターコイズ背景とのコントラスト強化 */
+  /* v7.5.6: 本翡翠背景でさらに強い存在感に */
   .org-fixed {
     flex: 1;
-    background: rgba(255,255,255,0.22);
-    border: 1px solid rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.28);
+    border: 1px solid rgba(255,255,255,0.75);
     border-radius: 6px;
-    padding: 5px 10px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -194,12 +210,32 @@
   }
   .org-fixed-value {
     color: var(--white);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.05em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  }
+  /* v7.6.0: エリアプルダウン */
+  .org-fixed-select {
+    flex: 1;
+    background: rgba(255,255,255,0.95);
+    color: var(--navy);
+    border: 1px solid rgba(255,255,255,0.85);
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    min-width: 0;
+    width: 100%;
+  }
+  .org-fixed-select:focus {
+    outline: 2px solid rgba(255,255,255,0.7);
+    outline-offset: 1px;
   }
   .date-display {
     display: none;
@@ -211,43 +247,45 @@
   }
 
   /* 送信先設定 */
+  /* v7.5.7: 本翡翠背景での認識性を強化（事業部・エリア表示と統一） */
   .recipients-bar {
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    background: rgba(0,176,221,0.15);
-    border: 1px solid rgba(0,176,221,0.4);
+    background: rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.6);
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.2s;
   }
   .recipients-bar:hover {
-    background: rgba(0,176,221,0.25);
+    background: rgba(255,255,255,0.32);
   }
   .recipients-bar .icon {
-    color: var(--turquoise);
+    color: var(--white);
     font-size: 13px;
     flex-shrink: 0;
   }
   .recipients-bar .label {
-    font-size: 10px;
-    color: var(--turquoise);
+    font-size: 11px;
+    color: rgba(255,255,255,0.92);
     letter-spacing: 0.06em;
-    font-weight: 500;
+    font-weight: 600;
     flex-shrink: 0;
   }
   .recipients-bar .summary {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--white);
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-weight: 500;
   }
   .recipients-bar .edit-icon {
-    font-size: 10px;
-    color: var(--turquoise);
+    font-size: 11px;
+    color: var(--white);
     flex-shrink: 0;
   }
 
@@ -362,7 +400,7 @@
     box-shadow: 0 4px 12px rgba(0, 176, 221, 0.25);
   }
   .sales-header {
-    cursor: default !important;
+    cursor: pointer !important;
     padding: 10px 14px 6px !important;
   }
   .sales-header h2 {
@@ -372,6 +410,12 @@
     gap: 8px;
     font-size: 16px !important;
     letter-spacing: 0.05em;
+  }
+  .sales-header .toggle {
+    color: var(--white);
+    margin-left: auto;
+    font-size: 14px;
+    transition: transform 0.3s;
   }
   .sales-icon {
     font-size: 20px;
@@ -1772,6 +1816,23 @@
     z-index: 300;
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
+  /* v7.6.3: 警告用トースト（本翡翠背景と差別化、目立つ赤） */
+  .toast.warning {
+    background: #E53935;
+    color: #FFF;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 16px 32px;
+    border-radius: 8px;
+    border: 3px solid #FFF;
+    box-shadow: 0 6px 24px rgba(229,57,53,0.5), 0 0 0 4px rgba(229,57,53,0.25);
+    letter-spacing: 0.05em;
+    animation: toastWarningPulse 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes toastWarningPulse {
+    from { box-shadow: 0 6px 24px rgba(229,57,53,0.5), 0 0 0 4px rgba(229,57,53,0.25); }
+    to   { box-shadow: 0 6px 28px rgba(229,57,53,0.7), 0 0 0 8px rgba(229,57,53,0.15); }
+  }
 </style>
 </head>
 <body>
@@ -1803,11 +1864,20 @@
       </div>
       <div class="org-fixed" id="areaFixed">
         <span class="org-fixed-label">エリア</span>
-        <span class="org-fixed-value">GM</span>
+        <select id="areaSelect" class="org-fixed-select">
+          <option value="">選択してください</option>
+          <option value="東北">東北</option>
+          <option value="関東第一">関東第一</option>
+          <option value="関東第二">関東第二</option>
+          <option value="中部">中部</option>
+          <option value="近畿">近畿</option>
+          <option value="中国">中国</option>
+          <option value="四国">四国</option>
+          <option value="九州">九州</option>
+        </select>
       </div>
       <!-- 内部値保持用（hidden）-->
       <input type="hidden" id="divisionSelect" value="GM事業部">
-      <input type="hidden" id="areaSelect" value="GM">
     </div>
     <div class="header-row2">
       <input type="date" id="reportDate" class="report-date-input">
@@ -2021,11 +2091,11 @@
   </section>
 
   <!-- 現在の売上 -->
-  <section class="section sales-section" id="sec-sales">
-    <div class="section-header sales-header">
-      <h2><span class="sales-icon">💎</span>現在の売上</h2>
+  <section class="section sales-section collapsed gm-hidden" id="sec-sales">
+    <div class="section-header sales-header" onclick="toggleSection('sec-sales')">
+      <h2><span class="sales-icon">💎</span>現在の売上<span class="toggle">▼</span></h2>
     </div>
-    <div class="section-body sales-body" style="display: block;">
+    <div class="section-body sales-body">
       <div class="sales-notice sales-notice-strong">⚠『現在の売上』の数値は独立しています。上部の『客数報告（当日分）』とは連動しません。</div>
       <div class="sales-grid">
         <div class="sales-item">
@@ -2086,37 +2156,40 @@
       <div class="area-block">
         <div class="area-title">
           <select class="area-pref-select" id="aichi-pref-select">
-            <option value="愛知" selected>愛知</option>
+            <option value="ー" selected>ー</option>
           </select>
           <span class="area-sub-total" id="aichi-subtotal">合計商談 0件</span>
         </div>
         <div class="count-grid">
-          <div class="count-item"><label>相談会</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="shinki" data-key="aichi-soudan" value="13" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>返信</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="shinki" data-key="aichi-henshin" value="3" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
+          <div class="count-item"><label>相談会</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="shinki" data-key="aichi-soudan" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
+          <div class="count-item"><label>返信</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="shinki" data-key="aichi-henshin" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
           <div class="count-item"><label>問合</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="shinki" data-key="aichi-toiawase" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>J紹</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="shinki" data-key="aichi-jsho" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>客紹</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="shinki" data-key="aichi-kakusho" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>追買</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="repeat" data-key="aichi-tsuikai" value="4" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
+          <div class="count-item"><label>紹介</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="shinki" data-key="aichi-jsho" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
+          <!-- v7.6.0: 客紹は紹介に統合、非表示（aichi-kakusho列は0で送信） -->
+          <div class="count-item gm-hidden"><label>客紹</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="shinki" data-key="aichi-kakusho" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
+          <div class="count-item"><label>追買</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="repeat" data-key="aichi-tsuikai" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
           <div class="count-item"><label>SO</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="other" data-key="aichi-so" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
           <div class="count-item"><label>その他</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="aichi" data-cat="other" data-key="aichi-other" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
         </div>
       </div>
 
+      <!-- v7.6.0: 生協は現在使用なしのため「ー」表記（aichi 8項目は0で送信） -->
       <div class="area-block">
         <div class="area-title">
           <span>生協</span>
-          <span class="area-sub-total" id="seikyo-subtotal">合計商談 0件</span>
+          <span class="area-sub-total">ー</span>
         </div>
-        <div class="count-grid">
-          <div class="count-item"><label>相談会</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="seikyo" data-cat="shinki" data-key="seikyo-soudan" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>返信</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="seikyo" data-cat="shinki" data-key="seikyo-henshin" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>問合</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="seikyo" data-cat="shinki" data-key="seikyo-toiawase" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label id="seikyo-jsho-label">生紹</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="seikyo" data-cat="shinki" data-key="seikyo-jsho" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>客紹</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="seikyo" data-cat="shinki" data-key="seikyo-kakusho" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>追買</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="seikyo" data-cat="repeat" data-key="seikyo-tsuikai" value="1" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>SO</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="seikyo" data-cat="other" data-key="seikyo-so" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-          <div class="count-item"><label>その他</label><div class="num-stepper"><button type="button" class="stepper-btn minus" onclick="stepInput(this,-1)">−</button><input type="number" data-area="seikyo" data-cat="other" data-key="seikyo-other" value="0" inputmode="numeric"><button type="button" class="stepper-btn plus" onclick="stepInput(this,1)">＋</button></div></div>
-        </div>
+        <div class="seikyo-disabled-msg">ー（現在使用なし）</div>
+        <!-- 内部値保持（送信は常に0）-->
+        <input type="hidden" data-area="seikyo" data-cat="shinki" data-key="seikyo-soudan" value="0">
+        <input type="hidden" data-area="seikyo" data-cat="shinki" data-key="seikyo-henshin" value="0">
+        <input type="hidden" data-area="seikyo" data-cat="shinki" data-key="seikyo-toiawase" value="0">
+        <input type="hidden" data-area="seikyo" data-cat="shinki" data-key="seikyo-jsho" value="0">
+        <input type="hidden" data-area="seikyo" data-cat="shinki" data-key="seikyo-kakusho" value="0">
+        <input type="hidden" data-area="seikyo" data-cat="repeat" data-key="seikyo-tsuikai" value="0">
+        <input type="hidden" data-area="seikyo" data-cat="other" data-key="seikyo-so" value="0">
+        <input type="hidden" data-area="seikyo" data-cat="other" data-key="seikyo-other" value="0">
+        <span id="seikyo-jsho-label" style="display:none;">生紹</span>
       </div>
     </div>
   </section>
@@ -2145,7 +2218,7 @@
   </section>
 
   <!-- 翌営業日の予定 -->
-  <section class="section collapsed" id="sec-next">
+  <section class="section collapsed gm-hidden" id="sec-next">
     <div class="section-header" onclick="toggleSection('sec-next')">
       <h2><span class="icon">▶</span>翌営業日の予定</h2>
       <span class="toggle">▼</span>
@@ -2164,7 +2237,7 @@
   </section>
 
   <!-- 今月の相談会 -->
-  <section class="section collapsed" id="sec-meet">
+  <section class="section collapsed gm-hidden" id="sec-meet">
     <div class="section-header" onclick="toggleSection('sec-meet')">
       <h2><span class="icon">▶</span>今月の相談会<span class="inherit-badge">前日引継</span></h2>
       <div class="meet-badge-group">
@@ -2195,7 +2268,7 @@
   </section>
 
   <!-- 新規---来場 -->
-  <section class="section collapsed" id="sec-raijo">
+  <section class="section collapsed gm-hidden" id="sec-raijo">
     <div class="section-header" onclick="toggleSection('sec-raijo')">
       <h2><span class="icon">▶</span>新規---来場<span class="inherit-badge">前日引継</span></h2>
       <div class="count-badge">JA※<span class="num" id="badge-raijo-ast">0</span>件・JA今月<span class="num" id="badge-raijo">0</span>件<span class="meet-support-badge">（内サポAPO　<span id="badge-raijo-support">0</span>件）</span></div>
@@ -2223,7 +2296,7 @@
   </section>
 
   <!-- JA《新規》---返信・問合・紹介・他 -->
-  <section class="section collapsed" id="sec-resp">
+  <section class="section collapsed gm-hidden" id="sec-resp">
     <div class="section-header" onclick="toggleSection('sec-resp')">
       <h2><span class="icon">▶</span>JA《新規》---返信・問合・紹介・他<span class="inherit-badge">前日引継</span></h2>
       <div class="count-badge">JA※<span class="num" id="badge-resp-ast">0</span>件・JA今月<span class="num" id="badge-resp">0</span>件</div>
@@ -2286,7 +2359,7 @@
   </section>
 
   <!-- 生協《新規》---返信・問合・紹介・他 -->
-  <section class="section collapsed" id="sec-sresp">
+  <section class="section collapsed gm-hidden" id="sec-sresp">
     <div class="section-header" onclick="toggleSection('sec-sresp')">
       <h2><span class="icon">▶</span>生協《新規》---返信・問合・紹介・他<span class="inherit-badge">前日引継</span></h2>
       <div class="count-badge">JA※<span class="num" id="badge-sresp-ast">0</span>件・JA今月<span class="num" id="badge-sresp">0</span>件</div>
@@ -2349,7 +2422,7 @@
   </section>
 
   <!-- 在庫 -->
-  <section class="section collapsed" id="sec-stock">
+  <section class="section collapsed gm-hidden" id="sec-stock">
     <div class="section-header" onclick="toggleSection('sec-stock')">
       <h2><span class="icon">▶</span>在庫<span class="inherit-badge">前日引継</span></h2>
       <div class="count-badge"><span class="num" id="badge-stock">0</span>件</div>
@@ -2413,7 +2486,7 @@
   // ==========================================================
   //  アプリ バージョン（更新時はここの数字だけ変える）
   // ==========================================================
-  const APP_VERSION = "GMSDR_gm7.5.5";
+  const APP_VERSION = "GMSDR_gm7.6.3";
 
   // ==========================================================
   //  ログインパスワード（1日1回・同日2回目以降は自動通過）
@@ -2632,13 +2705,13 @@
   const TODAY_CATS = [
     { key: "karitori", label: "刈取結果", placeholder: "" },
     { key: "soudan", label: "相談会", placeholder: "" },
-    { key: "jsho", label: "JA紹介", placeholder: "" },
-    { key: "kakusho", label: "客紹介", placeholder: "" },
+    { key: "jsho", label: "紹介", placeholder: "" },
+    { key: "kakusho", label: "客紹介", placeholder: "", hidden: true },
     { key: "henshin", label: "返信/問合", placeholder: "" },
     { key: "tsuikai", label: "追加/買替", placeholder: "" },
     { key: "so", label: "SO", placeholder: "" },
-    { key: "seikyo", label: "生協", placeholder: "" },
-    { key: "sp", label: "SP紹介/担当者紹介/その他", placeholder: "" }
+    { key: "seikyo", label: "生協", placeholder: "", hidden: true },
+    { key: "sp", label: "SP紹介/担当者紹介/その他", placeholder: "", hidden: true }
   ];
 
   // 本番運用ではサンプルデータは空（プロトタイプ時代の名残を整理）
@@ -2798,6 +2871,8 @@
     TODAY_CATS.forEach(cat => {
       const div = document.createElement("div");
       div.className = "today-cat";
+      // v7.6.0: hiddenフラグのカテゴリは非表示（要素は残す）
+      if (cat.hidden) div.classList.add("gm-hidden");
       div.dataset.catKey = cat.key;
       div.innerHTML = `
         <div class="today-cat-header">
@@ -3322,7 +3397,11 @@
     const seikyoTotal = seikyoCalc.total;
     const grandTotal = aichiTotal + seikyoTotal;
     document.getElementById("aichi-subtotal").innerHTML = `合計商談 ${formatNumDisplay(aichiTotal)}件<span class="breakdown">(新規${formatNumDisplay(aichiCalc.shinki)}件、リピート${formatNumDisplay(aichiCalc.repeat)}件、その他${formatNumDisplay(aichiCalc.other)}件)</span>`;
-    document.getElementById("seikyo-subtotal").innerHTML = `合計商談 ${formatNumDisplay(seikyoTotal)}件<span class="breakdown">(新規${formatNumDisplay(seikyoCalc.shinki)}件、リピート${formatNumDisplay(seikyoCalc.repeat)}件、その他${formatNumDisplay(seikyoCalc.other)}件)</span>`;
+    // v7.6.2: seikyo-subtotal要素はv7.6.0で削除済（「ー」表示に変更）。null安全に
+    const seikyoSubtotalEl = document.getElementById("seikyo-subtotal");
+    if (seikyoSubtotalEl) {
+      seikyoSubtotalEl.innerHTML = `合計商談 ${formatNumDisplay(seikyoTotal)}件<span class="breakdown">(新規${formatNumDisplay(seikyoCalc.shinki)}件、リピート${formatNumDisplay(seikyoCalc.repeat)}件、その他${formatNumDisplay(seikyoCalc.other)}件)</span>`;
+    }
     document.getElementById("totalDisplay").textContent = formatNumDisplay(grandTotal);
     document.getElementById("badge-count").textContent = formatNumDisplay(grandTotal);
 
@@ -3919,6 +3998,52 @@
       i.addEventListener("input", updateAllCounts);
     });
 
+    // v7.6.0: 起動時に前回選択エリアを復元
+    try {
+      const lastArea = localStorage.getItem("lastArea");
+      const areaSel = document.getElementById("areaSelect");
+      if (lastArea && areaSel && areaSel.querySelector(`option[value="${lastArea}"]`)) {
+        areaSel.value = lastArea;
+      }
+    } catch (e) {}
+
+    // v7.6.0: エリア変更時に社員リストを再ロード
+    const areaSelectEl = document.getElementById("areaSelect");
+    if (areaSelectEl) {
+      areaSelectEl.addEventListener("change", async () => {
+        const area = areaSelectEl.value || "";
+        const division = document.getElementById("divisionSelect").value || "";
+        const userSel = document.getElementById("userSelect");
+        try { localStorage.setItem("lastArea", area); } catch (e) {}
+        if (!area) {
+          userSel.innerHTML = '<option value="">先にエリアを選択</option>';
+          return;
+        }
+        showLoading("社員データ読込中...");
+        try {
+          const result = await gasGet({ action: "init", area, division });
+          if (result && result.success) {
+            userSel.innerHTML = "";
+            const users = result.users || [];
+            if (users.length === 0) {
+              userSel.innerHTML = '<option value="">（社員データなし）</option>';
+            } else {
+              users.forEach(u => {
+                const opt = document.createElement("option");
+                opt.value = u.name;
+                opt.textContent = u.name;
+                userSel.appendChild(opt);
+              });
+            }
+          }
+        } catch (e) {
+          console.error("[エリア変更] エラー:", e);
+        } finally {
+          hideLoading();
+        }
+      });
+    }
+
     // GASから社員一覧を取得
     showLoading("起動中...");
     const sel = document.getElementById("userSelect");
@@ -3927,6 +4052,12 @@
       console.log("[起動] GAS呼び出し開始: " + GAS_URL);
       const areaForInit = document.getElementById("areaSelect").value || "";
       const divisionForInit = document.getElementById("divisionSelect").value || "";
+      // v7.6.0: エリア未選択時は社員リストを空にして、選択を促す
+      if (!areaForInit) {
+        sel.innerHTML = '<option value="">先にエリアを選択</option>';
+        hideLoading();
+        return;
+      }
       const result = await gasGet({ action: "init", area: areaForInit, division: divisionForInit });
       console.log("[起動] GAS応答:", result);
 
@@ -4696,6 +4827,13 @@
 
   // ===== 送信処理（GAS連携） =====
   async function sendReport() {
+    // v7.6.0: エリア未選択チェック
+    const areaCheck = document.getElementById("areaSelect").value || "";
+    if (!areaCheck) {
+      closeModal();
+      showToast("⚠ エリアを選択してください", "warning");
+      return;
+    }
     if (recipients.length === 0) {
       closeModal();
       showToast("⚠ 送信先が未設定です。タイトル下の📧アイコンから設定してください");
@@ -4733,9 +4871,12 @@
     }
   }
 
-  function showToast(msg) {
+  // v7.6.3: 第2引数 type="warning" で目立つ赤色警告表示
+  function showToast(msg, type) {
     const t = document.getElementById("toast");
     t.textContent = msg;
+    t.classList.remove("warning");
+    if (type === "warning") t.classList.add("warning");
     t.classList.add("show");
     setTimeout(() => t.classList.remove("show"), 3500);
   }
