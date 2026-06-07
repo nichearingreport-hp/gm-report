@@ -2488,7 +2488,7 @@
   // ==========================================================
   //  アプリ バージョン（更新時はここの数字だけ変える）
   // ==========================================================
-  const APP_VERSION = "GMSDR_gm7.6.5";
+  const APP_VERSION = "GMSDR_gm7.6.6";
 
   // ==========================================================
   //  ログインパスワード（1日1回・同日2回目以降は自動通過）
@@ -4015,32 +4015,53 @@
       }
     } catch (e) {}
 
-    // v7.6.5: 社員リストはエリアのみで絞り込み（事業部問わず全員表示）
-    //         事業部プルダウンは「報告者の所属事業部」の記録用途
+    // v7.6.6: エリア×事業部でフィルタ。「東北」選択時は社員マスタの「東北/東北北三県/東北南三県」すべてを対象に
     async function reloadUserList() {
       const area = (document.getElementById("areaSelect").value || "").trim();
+      const division = (document.getElementById("divisionSelect").value || "").trim();
       const userSel = document.getElementById("userSelect");
-      if (!area) {
-        userSel.innerHTML = '<option value="">先にエリアを選択</option>';
+      if (!area || !division) {
+        userSel.innerHTML = '<option value="">先にエリアと事業部を選択</option>';
         return;
       }
       showLoading("社員データ読込中...");
       try {
-        // v7.6.5: division を渡さない → GAS側でエリアのみフィルタ → 事業部問わず全社員取得
-        const result = await gasGet({ action: "init", area });
-        if (result && result.success) {
-          userSel.innerHTML = "";
-          const users = result.users || [];
-          if (users.length === 0) {
-            userSel.innerHTML = '<option value="">（社員データなし）</option>';
-          } else {
-            users.forEach(u => {
-              const opt = document.createElement("option");
-              opt.value = u.name;
-              opt.textContent = u.name;
-              userSel.appendChild(opt);
-            });
+        let users = [];
+        if (area === "東北") {
+          // 東北は3パターン並列取得
+          const results = await Promise.all([
+            gasGet({ action: "init", area: "東北", division }),
+            gasGet({ action: "init", area: "東北北三県", division }),
+            gasGet({ action: "init", area: "東北南三県", division })
+          ]);
+          const merged = [];
+          results.forEach(r => {
+            if (r && r.success && Array.isArray(r.users)) merged.push(...r.users);
+          });
+          // 名前で重複除去
+          const seen = new Set();
+          users = merged.filter(u => {
+            if (!u || !u.name) return false;
+            if (seen.has(u.name)) return false;
+            seen.add(u.name);
+            return true;
+          });
+        } else {
+          const result = await gasGet({ action: "init", area, division });
+          if (result && result.success) {
+            users = result.users || [];
           }
+        }
+        userSel.innerHTML = "";
+        if (users.length === 0) {
+          userSel.innerHTML = '<option value="">（該当社員なし）</option>';
+        } else {
+          users.forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.name;
+            opt.textContent = u.name;
+            userSel.appendChild(opt);
+          });
         }
       } catch (e) {
         console.error("[社員再ロード] エラー:", e);
@@ -4049,7 +4070,7 @@
       }
     }
 
-    // v7.6.0/v7.6.5: エリア変更時に社員リストを再ロード（事業部変更時は再ロード不要）
+    // v7.6.0/v7.6.6: エリア・事業部変更時に社員リストを再ロード
     const areaSelectEl = document.getElementById("areaSelect");
     if (areaSelectEl) {
       areaSelectEl.addEventListener("change", () => {
@@ -4063,7 +4084,8 @@
       divisionSelectEl.addEventListener("change", () => {
         const div = divisionSelectEl.value || "";
         try { localStorage.setItem("lastDivision", div); } catch (e) {}
-        // v7.6.5: 事業部変更時は社員リストを変えない（事業部はあくまで報告者の所属記録用）
+        // v7.6.6: 事業部変更時も社員リストを再ロード（事業部別フィルタのため）
+        reloadUserList();
       });
     }
 
@@ -4074,13 +4096,19 @@
     try {
       console.log("[起動] GAS呼び出し開始: " + GAS_URL);
       const areaForInit = document.getElementById("areaSelect").value || "";
-      // v7.6.5: エリアのみで社員リストを取得（事業部問わず）
-      if (!areaForInit) {
-        sel.innerHTML = '<option value="">先にエリアを選択</option>';
+      const divisionForInit = document.getElementById("divisionSelect").value || "";
+      // v7.6.6: エリアと事業部の両方が選択されていることが社員取得の前提
+      if (!areaForInit || !divisionForInit) {
+        sel.innerHTML = '<option value="">先にエリアと事業部を選択</option>';
         hideLoading();
         return;
       }
-      const result = await gasGet({ action: "init", area: areaForInit });
+      // v7.6.6: 起動時も reloadUserList を利用（東北の特例ロジックを共通化）
+      await reloadUserList();
+      hideLoading();
+      return;
+      // ↓ 以下のレガシー処理は到達しない（reloadUserListで完結）
+      const result = await gasGet({ action: "init", area: areaForInit, division: divisionForInit });
       console.log("[起動] GAS応答:", result);
 
       if (result && result.success) {
