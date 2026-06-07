@@ -1860,7 +1860,11 @@
     <div class="header-row-org">
       <div class="org-fixed" id="divisionFixed">
         <span class="org-fixed-label">事業部</span>
-        <span class="org-fixed-value">GM事業部</span>
+        <select id="divisionSelect" class="org-fixed-select">
+          <option value="">選択してください</option>
+          <option value="GM事業部">GM事業部</option>
+          <option value="ヒアリング事業部">ヒアリング事業部</option>
+        </select>
       </div>
       <div class="org-fixed" id="areaFixed">
         <span class="org-fixed-label">エリア</span>
@@ -1876,8 +1880,6 @@
           <option value="九州">九州</option>
         </select>
       </div>
-      <!-- 内部値保持用（hidden）-->
-      <input type="hidden" id="divisionSelect" value="GM事業部">
     </div>
     <div class="header-row2">
       <input type="date" id="reportDate" class="report-date-input">
@@ -2486,7 +2488,7 @@
   // ==========================================================
   //  アプリ バージョン（更新時はここの数字だけ変える）
   // ==========================================================
-  const APP_VERSION = "GMSDR_gm7.6.3";
+  const APP_VERSION = "GMSDR_gm7.6.4";
 
   // ==========================================================
   //  ログインパスワード（1日1回・同日2回目以降は自動通過）
@@ -4005,42 +4007,62 @@
       if (lastArea && areaSel && areaSel.querySelector(`option[value="${lastArea}"]`)) {
         areaSel.value = lastArea;
       }
+      // v7.6.4: 前回選択事業部も復元
+      const lastDiv = localStorage.getItem("lastDivision");
+      const divSel = document.getElementById("divisionSelect");
+      if (lastDiv && divSel && divSel.querySelector(`option[value="${lastDiv}"]`)) {
+        divSel.value = lastDiv;
+      }
     } catch (e) {}
 
-    // v7.6.0: エリア変更時に社員リストを再ロード
+    // v7.6.4: 社員リスト再ロード関数（エリア・事業部の両方で絞り込み）
+    async function reloadUserList() {
+      const area = (document.getElementById("areaSelect").value || "").trim();
+      const division = (document.getElementById("divisionSelect").value || "").trim();
+      const userSel = document.getElementById("userSelect");
+      if (!area || !division) {
+        userSel.innerHTML = '<option value="">先にエリアと事業部を選択</option>';
+        return;
+      }
+      showLoading("社員データ読込中...");
+      try {
+        const result = await gasGet({ action: "init", area, division });
+        if (result && result.success) {
+          userSel.innerHTML = "";
+          const users = result.users || [];
+          if (users.length === 0) {
+            userSel.innerHTML = '<option value="">（該当社員なし）</option>';
+          } else {
+            users.forEach(u => {
+              const opt = document.createElement("option");
+              opt.value = u.name;
+              opt.textContent = u.name;
+              userSel.appendChild(opt);
+            });
+          }
+        }
+      } catch (e) {
+        console.error("[社員再ロード] エラー:", e);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // v7.6.0/v7.6.4: エリア・事業部変更時に社員リストを再ロード
     const areaSelectEl = document.getElementById("areaSelect");
     if (areaSelectEl) {
-      areaSelectEl.addEventListener("change", async () => {
+      areaSelectEl.addEventListener("change", () => {
         const area = areaSelectEl.value || "";
-        const division = document.getElementById("divisionSelect").value || "";
-        const userSel = document.getElementById("userSelect");
         try { localStorage.setItem("lastArea", area); } catch (e) {}
-        if (!area) {
-          userSel.innerHTML = '<option value="">先にエリアを選択</option>';
-          return;
-        }
-        showLoading("社員データ読込中...");
-        try {
-          const result = await gasGet({ action: "init", area, division });
-          if (result && result.success) {
-            userSel.innerHTML = "";
-            const users = result.users || [];
-            if (users.length === 0) {
-              userSel.innerHTML = '<option value="">（社員データなし）</option>';
-            } else {
-              users.forEach(u => {
-                const opt = document.createElement("option");
-                opt.value = u.name;
-                opt.textContent = u.name;
-                userSel.appendChild(opt);
-              });
-            }
-          }
-        } catch (e) {
-          console.error("[エリア変更] エラー:", e);
-        } finally {
-          hideLoading();
-        }
+        reloadUserList();
+      });
+    }
+    const divisionSelectEl = document.getElementById("divisionSelect");
+    if (divisionSelectEl) {
+      divisionSelectEl.addEventListener("change", () => {
+        const div = divisionSelectEl.value || "";
+        try { localStorage.setItem("lastDivision", div); } catch (e) {}
+        reloadUserList();
       });
     }
 
@@ -4052,9 +4074,9 @@
       console.log("[起動] GAS呼び出し開始: " + GAS_URL);
       const areaForInit = document.getElementById("areaSelect").value || "";
       const divisionForInit = document.getElementById("divisionSelect").value || "";
-      // v7.6.0: エリア未選択時は社員リストを空にして、選択を促す
-      if (!areaForInit) {
-        sel.innerHTML = '<option value="">先にエリアを選択</option>';
+      // v7.6.4: エリア or 事業部 が未選択なら社員リストを空にして選択を促す
+      if (!areaForInit || !divisionForInit) {
+        sel.innerHTML = '<option value="">先にエリアと事業部を選択</option>';
         hideLoading();
         return;
       }
@@ -4827,7 +4849,13 @@
 
   // ===== 送信処理（GAS連携） =====
   async function sendReport() {
-    // v7.6.0: エリア未選択チェック
+    // v7.6.0/v7.6.4: 事業部・エリア未選択チェック
+    const divCheck = document.getElementById("divisionSelect").value || "";
+    if (!divCheck) {
+      closeModal();
+      showToast("⚠ 事業部を選択してください", "warning");
+      return;
+    }
     const areaCheck = document.getElementById("areaSelect").value || "";
     if (!areaCheck) {
       closeModal();
