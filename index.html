@@ -1887,6 +1887,11 @@
         <option value="">読込中...</option>
       </select>
     </div>
+    <!-- v7.6.8: 切替注意バナー（常時表示） -->
+    <div id="switch-warning" style="margin:6px 10px 2px; padding:8px 12px; background:#FFF4D6; border:1.5px solid #E8B94A; border-radius:8px; color:#7A5800; font-size:12.5px; font-weight:700; line-height:1.55;">
+      ⚠ 入力を始めたら、報告者・エリア・事業部の切り替えはお控えください。<br>
+      <span style="font-weight:500;">切り替えると入力中の内容は失われます（送信が終わったあとの切り替えは大丈夫です）。</span>
+    </div>
     <div class="date-display" id="dateDisplay"></div>
 
     <!-- 折り畳み可能エリア -->
@@ -2488,7 +2493,7 @@
   // ==========================================================
   //  アプリ バージョン（更新時はここの数字だけ変える）
   // ==========================================================
-  const APP_VERSION = "GMSDR_gm7.6.7";
+  const APP_VERSION = "GMSDR_gm7.6.8";
 
   // ==========================================================
   //  v7.6.7: 入力内容の上書き事故防止ガード
@@ -4197,6 +4202,38 @@
     // GASから社員一覧を取得
     showLoading("起動中...");
     const sel = document.getElementById("userSelect");
+
+    // ==========================================================
+    // v7.6.8: 報告者切替リスナーを実行経路に設置
+    //  ※v7.6.7まではこのリスナーが「到達不能なレガシー処理」内にあり一度も
+    //    動作していなかった（報告者を切り替えても読込が走らず、前の報告者の
+    //    内容が画面に残る・選択ゲートが消えない原因）。
+    // ==========================================================
+    sel.addEventListener("change", () => {
+      const next = sel.value;
+      // 報告者切替時の上書き事故防止ガード
+      if (lastLoadedUser && next !== lastLoadedUser) {
+        const msg = formDirty
+          ? "⚠ 入力途中の内容があります。\n\n報告者を切り替えると、いま入力されている内容は失われ、元に戻せません。\n\nこのまま切り替えますか？"
+          : "報告者を切り替えます。\n画面の内容は切り替え先の保存データに置き換わります。\n\nよろしいですか？";
+        if (!confirm(msg)) {
+          sel.value = lastLoadedUser;
+          return;
+        }
+      }
+      if (!next) {
+        lastLoadedUser = "";
+        formDirty = false;
+        showSelectionGate();
+        return;
+      }
+      try {
+        localStorage.setItem("lastUser", next);
+      } catch (e) {
+        console.warn("localStorage書き込みエラー:", e);
+      }
+      onUserChanged();
+    });
 
     try {
       console.log("[起動] GAS呼び出し開始: " + GAS_URL);
