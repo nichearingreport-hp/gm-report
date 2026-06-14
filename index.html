@@ -1863,7 +1863,6 @@
         <select id="divisionSelect" class="org-fixed-select">
           <option value="">選択してください</option>
           <option value="GM事業部">GM事業部</option>
-          <option value="ヒアリング事業部">ヒアリング事業部</option>
         </select>
       </div>
       <div class="org-fixed" id="areaFixed">
@@ -2493,7 +2492,7 @@
   // ==========================================================
   //  アプリ バージョン（更新時はここの数字だけ変える）
   // ==========================================================
-  const APP_VERSION = "GMSDR_gm7.6.9";
+  const APP_VERSION = "GMSDR_gm7.7.0";
 
   // ==========================================================
   //  v7.6.7: 入力内容の上書き事故防止ガード
@@ -2502,6 +2501,14 @@
   // ==========================================================
   let formDirty = false;
   let lastLoadedUser = "";
+  // v7.7.0: 報告者名 → その人の事業部（GM事業部 / GM事業部（HY)）のマップ。
+  //  GMアプリは案Bで、GM事業部とGM事業部（HY）の社員を同じリストに表示する。
+  //  選んだ報告者の正しい事業部を、前日データ取得・送信・メール宛先に使う。
+  let userDivisionMap = {};
+  function getReporterDivision() {
+    const u = (document.getElementById("userSelect") || {}).value || "";
+    return userDivisionMap[u] || (document.getElementById("divisionSelect") || {}).value || "";
+  }
   ["input", "change"].forEach(evtName => {
     document.addEventListener(evtName, (e) => {
       const t = e.target;
@@ -2511,14 +2518,14 @@
     }, true);
   });
 
-  // v7.6.7: 選択ゲート（事業部→エリア→報告者を選ぶまで入力欄を操作不可に）
+  // v7.6.7: 選択ゲート（エリア→報告者を選ぶまで入力欄を操作不可に）
   function showSelectionGate() {
     let d = document.getElementById("selection-gate");
     if (!d) {
       d = document.createElement("div");
       d.id = "selection-gate";
       d.style.cssText = "position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(255,255,255,0.72);z-index:50;display:flex;align-items:flex-start;justify-content:center;";
-      d.innerHTML = '<div style="margin-top:42vh;background:#203764;color:#fff;padding:16px 24px;border-radius:12px;font-size:14px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,0.25);text-align:center;line-height:2;">はじめに上の欄から<br>事業部 → エリア → 報告者<br>の順に選択してください</div>';
+      d.innerHTML = '<div style="margin-top:42vh;background:#203764;color:#fff;padding:16px 24px;border-radius:12px;font-size:14px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,0.25);text-align:center;line-height:2;">はじめに上の欄から<br>エリア → 報告者<br>の順に選択してください</div>';
       document.body.appendChild(d);
     }
     d.style.display = "flex";
@@ -2889,7 +2896,7 @@
       const result = await gasPost({
         action: "saveRecipients",
         user: userName,
-        division: (document.getElementById("divisionSelect") || {}).value || "",
+        division: getReporterDivision(),
         recipients: newRecipients
       });
       if (result && result.success) {
@@ -3662,7 +3669,8 @@
     }
     showLoading(userName + " さんのデータを読込中...");
     try {
-      const division = (document.getElementById("divisionSelect") || {}).value || "";
+      // v7.7.0: 選んだ報告者の正しい事業部（GM事業部 / GM事業部（HY)）で前日データを取得
+      const division = getReporterDivision();
       const result = await gasGet({ action: "getUserData", user: userName, division: division });
       if (result && result.success) {
         applyPreviousData(result.previousData);
@@ -4076,11 +4084,11 @@
         areaSel.value = lastArea;
       }
       // v7.6.4: 前回選択事業部も復元
-      const lastDiv = localStorage.getItem("lastDivision");
+      // v7.7.0: GMアプリの事業部はGM事業部固定（報告者リストにGM＋GM(HY)を表示する案B）。
+      //         実際の事業部は報告者ごとに userDivisionMap で決まるため、ここは常にGM事業部。
       const divSel = document.getElementById("divisionSelect");
-      if (lastDiv && divSel && divSel.querySelector(`option[value="${lastDiv}"]`)) {
-        divSel.value = lastDiv;
-      }
+      if (divSel) divSel.value = "GM事業部";
+      try { localStorage.setItem("lastDivision", "GM事業部"); } catch (e) {}
     } catch (e) {}
 
     // v7.6.6: エリア×事業部でフィルタ。「東北」選択時は社員マスタの「東北/東北北三県/東北南三県」すべてを対象に
@@ -4131,7 +4139,10 @@
           ph.value = "";
           ph.textContent = "▼ 報告者を選択してください";
           userSel.appendChild(ph);
+          // v7.7.0: 報告者名→事業部マップを構築（GM事業部 / GM事業部（HY)）
+          userDivisionMap = {};
           users.forEach(u => {
+            userDivisionMap[u.name] = u.division || "GM事業部";
             const opt = document.createElement("option");
             opt.value = u.name;
             opt.textContent = u.name;
@@ -5001,7 +5012,7 @@
     };
 
     // エリア・事業部
-    const division = document.getElementById("divisionSelect").value || "";
+    const division = getReporterDivision();   // v7.7.0: 報告者の正しい事業部
     const area = document.getElementById("areaSelect").value || "";
 
     return {
